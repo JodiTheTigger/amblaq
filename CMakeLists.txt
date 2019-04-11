@@ -2,8 +2,9 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(queues2)
 
-set(DIR_SOURCE src)
-set(DIR_TESTS  tests)
+set(DIR_SOURCE  src)
+set(DIR_INCLUDE include)
+set(DIR_TESTS   tests)
 
 set(PROJECT_TEST ${PROJECT_NAME}_test)
 
@@ -11,6 +12,8 @@ set(PROJECT_TEST ${PROJECT_NAME}_test)
 # Files
 # ------------------------------------------------------------------------------
 set(SOURCE
+    ${DIR_INCLUDE}/mpmc.h
+
     ${DIR_SOURCE}/mpmc.c
 )
 
