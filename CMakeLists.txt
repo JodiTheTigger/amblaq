@@ -30,4 +30,5 @@ set_target_properties(
     PROPERTIES
         C_STANDARD          11
         C_STANDARD_REQUIRED ON
+        C_EXTENSIONS        OFF
 )
