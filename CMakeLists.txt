@@ -29,8 +29,10 @@ add_executable(${PROJECT_TEST} ${SOURCE_TESTS})
 
 target_include_directories(
     ${PROJECT_NAME}
+    PUBLIC
+        ${DIR_INCLUDE}
     PRIVATE
-        ${DIR_SOURCE}   
+        ${DIR_SOURCE}
 )
 
 target_include_directories(
