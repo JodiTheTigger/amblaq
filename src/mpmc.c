@@ -1,8 +1,8 @@
 // adapted from http://www.1024cores.net/home/lock-free-algorithms/queues/bounded-mpmc-queue
 
+#include "mpmc.h"
+
 #include <stdatomic.h>
-#include <stdint.h>
-#include <stddef.h>
 #include <string.h>
 
 #if defined(__STDC_NO_ATOMICS__)
@@ -10,10 +10,6 @@
 #endif
 
 #define QUEUE2_CACHELINE_BYTES 64
-
-#if !defined(QUEUE2_MPMC_TYPE)
-    #define QUEUE2_MPMC_TYPE uint64_t
-#endif
 
 // -----------------------------------------------------------------------------
 
@@ -40,15 +36,6 @@ typedef struct Queue2_Mpmc
     Queue2_Cell    cells[];
 }
 Queue2_Mpmc;
-
-typedef enum Queue2_Result
-{
-      Queue2_Result_Ok
-    , Queue2_Result_Full
-    , Queue2_Result_Empty
-    , Queue2_Result_Contention
-}
-Queue2_Result;
 
 // -----------------------------------------------------------------------------
 
