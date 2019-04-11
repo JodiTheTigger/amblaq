@@ -12,7 +12,7 @@ set(PROJECT_TEST ${PROJECT_NAME}_test)
 # Files
 # ------------------------------------------------------------------------------
 set(SOURCE
-    ${DIR_INCLUDE}/mpmc.h
+    ${DIR_INCLUDE}/atomic-queues/mpmc.h
 
     ${DIR_SOURCE}/mpmc.c
 )

@@ -1,6 +1,6 @@
 // adapted from http://www.1024cores.net/home/lock-free-algorithms/queues/bounded-mpmc-queue
 
-#include "mpmc.h"
+#include <atomic-queues/mpmc.h>
 
 #include <stdatomic.h>
 #include <string.h>
