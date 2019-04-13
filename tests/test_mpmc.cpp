@@ -20,15 +20,42 @@ int main(int, char**)
         {
             const char* name = "Null pointers";
 
-            auto result = mpmc_make_queue(0, nullptr);
-            EXPECT(result < 0);
+            // Just expect not to crash, not testing results
+
+            mpmc_make_queue(0, nullptr);
+            mpmc_try_enqueue(nullptr, nullptr);
+            mpmc_try_dequeue(nullptr, nullptr);
+            mpmc_enqueue(nullptr, nullptr);
+            mpmc_dequeue(nullptr, nullptr);
 
             return {name, nullptr};
         }
         ,
         []() -> Result
         {
-            const char* name = "Create/Destroy";
+            const char* name = "Create";
+
+            EXPECT(mpmc_make_queue( 0,       nullptr) < 0);
+            EXPECT(mpmc_make_queue( 1,       nullptr) < 0);
+            EXPECT(mpmc_make_queue(-1,       nullptr) < 0);
+            EXPECT(mpmc_make_queue(-3000000, nullptr) < 0);
+            // min size
+
+            EXPECT(mpmc_make_queue(13,  nullptr) < 0);
+            EXPECT(mpmc_make_queue(255, nullptr) < 0);
+            // must be pow2
+
+            EXPECT(mpmc_make_queue(2^63, nullptr) < 0);
+            EXPECT(mpmc_make_queue(2^33, nullptr) < 0);
+            // Insane sizes
+
+            {
+                size_t bytes = mpmc_make_queue(2^8, nullptr);
+
+                EXPECT(bytes > 0);
+
+                // RAM:: TODO: Malloc
+            }
 
             return {name, nullptr};
         }
