@@ -6,6 +6,30 @@
 
 #define EXPECT(x) do {if(!(x)) { return {name, #x}; }} while(0)
 
+
+// -----------------------------------------------------------------------------
+// http://the-witness.net/news/2012/11/scopeexit-in-c11/
+// -----------------------------------------------------------------------------
+
+template <typename F>
+struct ScopeExit {
+    ScopeExit(F f) : f(f) {}
+    ~ScopeExit() { f(); }
+    F f;
+};
+
+template <typename F>
+ScopeExit<F> MakeScopeExit(F f) {
+    return ScopeExit<F>(f);
+};
+
+#define STRING_JOIN2(arg1, arg2) DO_STRING_JOIN2(arg1, arg2)
+#define DO_STRING_JOIN2(arg1, arg2) arg1 ## arg2
+#define defer(code) \
+    auto STRING_JOIN2(scope_exit_, __LINE__) = MakeScopeExit([&](){code;})
+
+// -----------------------------------------------------------------------------
+
 int main(int, char**)
 {
     struct Result
@@ -54,7 +78,12 @@ int main(int, char**)
 
                 EXPECT(bytes > 0);
 
-                // RAM:: TODO: Malloc
+                Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
+                defer(free(q));
+
+                size_t bytes2 = mpmc_make_queue(2^8, q);
+
+                EXPECT(bytes2 == bytes);
             }
 
             return {name, nullptr};
