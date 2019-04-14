@@ -93,6 +93,33 @@ int main(int, char**)
         {
             const char* name = "Empty";
 
+            {
+                size_t bytes = mpmc_make_queue(2^8, nullptr);
+
+                EXPECT(bytes > 0);
+
+                Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
+                defer(free(q));
+
+                mpmc_make_queue(2^8, q);
+
+                {
+                    QUEUE2_MPMC_TYPE data;
+
+                    Queue2_Result try_dequeue = mpmc_try_dequeue(q, &data);
+
+                    EXPECT(try_dequeue == Queue2_Result_Empty);
+                }
+
+                {
+                    QUEUE2_MPMC_TYPE data;
+
+                    Queue2_Result dequeue = mpmc_dequeue(q, &data);
+
+                    EXPECT(dequeue == Queue2_Result_Empty);
+                }
+            }
+
             return {name, nullptr};
         }
         ,
