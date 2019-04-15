@@ -43,13 +43,19 @@ size_t mpmc_make_queue(size_t cell_count, Queue2_Mpmc* queue)
 {
     if (cell_count < 2)
     {
-        return -1;
+        return 0;
     }
 
     if (cell_count & (cell_count - 1))
     {
         // must be pow2.
-        return -1;
+        return 0;
+    }
+
+    if (cell_count > (1ULL << 32))
+    {
+        // for now, don't do larger than 4GB, more likly a bug than intentional.
+        return 0;
     }
 
     size_t bytes = sizeof(Queue2_Mpmc) +  (sizeof(Queue2_Cell) * cell_count);
@@ -75,10 +81,17 @@ size_t mpmc_make_queue(size_t cell_count, Queue2_Mpmc* queue)
 
     atomic_store_explicit(&queue->enqueue_index, 0, memory_order_relaxed);
     atomic_store_explicit(&queue->dequeue_index, 0, memory_order_relaxed);
+
+    return bytes;
 }
 
 Queue2_Result mpmc_try_enqueue(Queue2_Mpmc* queue, QUEUE2_MPMC_TYPE const* data)
 {
+    if (!data)
+    {
+        return Queue2_Result_Error;
+    }
+
     size_t pos =
         atomic_load_explicit(&queue->enqueue_index, memory_order_relaxed);
 
@@ -126,6 +139,11 @@ Queue2_Result mpmc_try_enqueue(Queue2_Mpmc* queue, QUEUE2_MPMC_TYPE const* data)
 
 Queue2_Result mpmc_try_dequeue(Queue2_Mpmc* queue, QUEUE2_MPMC_TYPE* data)
 {
+    if (!data)
+    {
+        return Queue2_Result_Error;
+    }
+
     size_t pos =
         atomic_load_explicit(&queue->dequeue_index, memory_order_relaxed);
 
