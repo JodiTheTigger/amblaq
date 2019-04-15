@@ -3,6 +3,8 @@
 #include <initializer_list>
 #include <cstdio>
 #include <functional>
+#include <vector>
+#include <thread>
 
 #define EXPECT(x) do {if(!(x)) { return {name, #x}; }} while(0)
 
@@ -104,7 +106,7 @@ int main(int, char**)
                 mpmc_make_queue(2^8, q);
 
                 {
-                    QUEUE2_MPMC_TYPE data;
+                    QUEUE2_MPMC_TYPE data{};
 
                     Queue2_Result try_dequeue = mpmc_try_dequeue(q, &data);
 
@@ -112,7 +114,7 @@ int main(int, char**)
                 }
 
                 {
-                    QUEUE2_MPMC_TYPE data;
+                    QUEUE2_MPMC_TYPE data{};
 
                     Queue2_Result dequeue = mpmc_dequeue(q, &data);
 
@@ -145,7 +147,7 @@ int main(int, char**)
                 }
 
                 {
-                    QUEUE2_MPMC_TYPE data;
+                    QUEUE2_MPMC_TYPE data{};
 
                     Queue2_Result try_dequeue = mpmc_try_enqueue(q, &data);
 
@@ -153,7 +155,7 @@ int main(int, char**)
                 }
 
                 {
-                    QUEUE2_MPMC_TYPE data;
+                    QUEUE2_MPMC_TYPE data{};
 
                     Queue2_Result dequeue = mpmc_enqueue(q, &data);
 
