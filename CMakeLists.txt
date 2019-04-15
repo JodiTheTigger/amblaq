@@ -64,6 +64,9 @@ set_target_properties(
         CXX_EXTENSIONS        OFF
 )
 
+# RAM: TODO: test for warning support and stuff.
+#target_compile_options(${PROJECT_TEST} PRIVATE "-Wshadow" "-fno-exceptions" "-fno-rtti")
+
 # ------------------------------------------------------------------------------
 # Dependencies
 # ------------------------------------------------------------------------------
