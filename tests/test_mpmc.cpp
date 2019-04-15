@@ -127,6 +127,40 @@ int main(int, char**)
         {
             const char* name = "Full";
 
+            {
+                size_t bytes = mpmc_make_queue(2^8, nullptr);
+
+                EXPECT(bytes > 0);
+
+                Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
+                defer(free(q));
+
+                mpmc_make_queue(2^4, q);
+
+                for (unsigned i = 0; i < (2^4); i++)
+                {
+                    QUEUE2_MPMC_TYPE data{};
+
+                    EXPECT(mpmc_enqueue(q, &data) == Queue2_Result_Ok);
+                }
+
+                {
+                    QUEUE2_MPMC_TYPE data;
+
+                    Queue2_Result try_dequeue = mpmc_try_enqueue(q, &data);
+
+                    EXPECT(try_dequeue == Queue2_Result_Full);
+                }
+
+                {
+                    QUEUE2_MPMC_TYPE data;
+
+                    Queue2_Result dequeue = mpmc_enqueue(q, &data);
+
+                    EXPECT(dequeue == Queue2_Result_Full);
+                }
+            }
+
             return {name, nullptr};
         }
         ,
