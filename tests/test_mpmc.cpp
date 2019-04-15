@@ -135,9 +135,9 @@ int main(int, char**)
                 Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
                 defer(free(q));
 
-                mpmc_make_queue(2^4, q);
+                mpmc_make_queue(2^8, q);
 
-                for (unsigned i = 0; i < (2^4); i++)
+                for (unsigned i = 0; i < (2^8); i++)
                 {
                     QUEUE2_MPMC_TYPE data{};
 
