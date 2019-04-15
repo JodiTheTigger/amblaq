@@ -30,7 +30,7 @@ typedef struct Queue2_Mpmc
     atomic_size_t  dequeue_index;
     uint8_t        pad3[QUEUE2_CACHELINE_BYTES - sizeof(atomic_size_t)];
 
-    size_t  const  cell_mask;
+    size_t         cell_mask;
     uint8_t        pad4[QUEUE2_CACHELINE_BYTES - sizeof(size_t)];
 
     Queue2_Cell    cells[];
@@ -59,7 +59,9 @@ size_t mpmc_make_queue(size_t cell_count, Queue2_Mpmc* queue)
         return bytes;
     }
 
-    memset(queue, 0, bytes);
+    memset(queue, 0, bytes);    
+
+    queue->cell_mask = cell_count - 1;
 
     for (size_t i = 0; i < cell_count; i++)
     {
