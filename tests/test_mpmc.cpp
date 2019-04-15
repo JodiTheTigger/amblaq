@@ -72,19 +72,20 @@ int main(int, char**)
             EXPECT(mpmc_make_queue(255, nullptr) < 0);
             // must be pow2
 
-            EXPECT(mpmc_make_queue(2^63, nullptr) < 0);
-            EXPECT(mpmc_make_queue(2^33, nullptr) < 0);
+            EXPECT(mpmc_make_queue(1ULL << 63, nullptr) < 0);
+            EXPECT(mpmc_make_queue(1ULL << 33, nullptr) < 0);
             // Insane sizes
 
             {
-                size_t bytes = mpmc_make_queue(2^8, nullptr);
+                size_t bytes = mpmc_make_queue(1 << 8, nullptr);
 
                 EXPECT(bytes > 0);
+                EXPECT(bytes < 100000);
 
                 Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
                 defer(free(q));
 
-                size_t bytes2 = mpmc_make_queue(2^8, q);
+                size_t bytes2 = mpmc_make_queue(1 << 8, q);
 
                 EXPECT(bytes2 == bytes);
             }
@@ -97,14 +98,14 @@ int main(int, char**)
             const char* name = "Empty";
 
             {
-                size_t bytes = mpmc_make_queue(2^8, nullptr);
+                size_t bytes = mpmc_make_queue(1 << 8, nullptr);
 
                 EXPECT(bytes > 0);
 
                 Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
                 defer(free(q));
 
-                mpmc_make_queue(2^8, q);
+                mpmc_make_queue(1 << 8, q);
 
                 {
                     QUEUE2_MPMC_TYPE data{};
@@ -131,16 +132,16 @@ int main(int, char**)
             const char* name = "Full";
 
             {
-                size_t bytes = mpmc_make_queue(2^8, nullptr);
+                size_t bytes = mpmc_make_queue(1 << 8, nullptr);
 
                 EXPECT(bytes > 0);
 
                 Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
                 defer(free(q));
 
-                mpmc_make_queue(2^8, q);
+                mpmc_make_queue(1 << 8, q);
 
-                for (unsigned i = 0; i < (2^8); i++)
+                for (unsigned i = 0; i < (1 << 8); i++)
                 {
                     QUEUE2_MPMC_TYPE data{};
 
@@ -176,12 +177,12 @@ int main(int, char**)
 
             Queue2_Mpmc* q;
             {
-                size_t bytes = mpmc_make_queue(2^8, nullptr);
+                size_t bytes = mpmc_make_queue(1 << 8, nullptr);
 
                 EXPECT(bytes > 0);
 
                 Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
-                mpmc_make_queue(2^4, q);
+                mpmc_make_queue(1 << 8, q);
             }
             defer(free(q));
 
