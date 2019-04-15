@@ -5,6 +5,7 @@
 #include <functional>
 #include <vector>
 #include <thread>
+#include <atomic>
 
 #define EXPECT(x) do {if(!(x)) { return {name, #x}; }} while(0)
 
@@ -169,6 +170,85 @@ int main(int, char**)
         []() -> Result
         {
             const char* name = "10,000 sums";
+
+            unsigned in_thread_count  = 2;
+            unsigned out_thread_count = 2;
+
+            Queue2_Mpmc* q;
+            {
+                size_t bytes = mpmc_make_queue(2^8, nullptr);
+
+                EXPECT(bytes > 0);
+
+                Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
+                mpmc_make_queue(2^4, q);
+            }
+            defer(free(q));
+
+            std::vector<std::thread> in_threads;
+            std::vector<std::thread> out_threads;
+
+            in_threads.reserve(in_thread_count);
+            out_threads.reserve(out_thread_count);
+
+            std::atomic<unsigned> in_done_count {in_thread_count};
+            std::atomic<unsigned> out_done_count{out_thread_count};
+            std::atomic<size_t>   global_count  {};
+
+            for (unsigned i = 0; i < in_thread_count; i++)
+            {
+                in_threads.emplace_back
+                (
+                    [q, &in_done_count]()
+                    {
+                        QUEUE2_MPMC_TYPE item{22};
+
+                        for (unsigned i = 0; i < 10000; i++)
+                        {
+                            while(mpmc_enqueue(q, &item) != Queue2_Result_Ok);
+                        }
+
+                        in_done_count.fetch_add(1, std::memory_order_relaxed);
+                    }
+                );
+            }
+
+            for (unsigned i = 0; i < out_thread_count; i++)
+            {
+                out_threads.emplace_back
+                (
+                    [q, &out_done_count, &global_count]()
+                    {
+                        QUEUE2_MPMC_TYPE item{0};
+
+                        for (unsigned i = 0; i < 10000; i++)
+                        {
+                            while(mpmc_enqueue(q, &item) != Queue2_Result_Ok);
+
+                            global_count.fetch_add
+                            (
+                                item, std::memory_order_relaxed
+                            );
+                        }
+
+                        out_done_count.fetch_add(1, std::memory_order_relaxed);
+                    }
+                );
+            }
+
+            while( in_done_count.load(std::memory_order_relaxed));
+            while(out_done_count.load(std::memory_order_relaxed));
+
+            for (unsigned i = 0; i < in_thread_count; i++)
+            {
+                in_threads[i].join();
+            }
+            for (unsigned i = 0; i < out_thread_count; i++)
+            {
+                in_threads[i].join();
+            }
+
+            EXPECT(global_count.load() == (10000ULL*22*out_thread_count));
 
             return {name, nullptr};
         }

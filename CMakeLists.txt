@@ -72,3 +72,13 @@ target_link_libraries(
     PRIVATE
         ${PROJECT_NAME}
 )
+
+if (UNIX)
+    find_package(Threads REQUIRED)
+
+    target_link_libraries(
+        ${PROJECT_TEST}
+        PRIVATE
+            ${CMAKE_THREAD_LIBS_INIT}
+    )
+endif()
