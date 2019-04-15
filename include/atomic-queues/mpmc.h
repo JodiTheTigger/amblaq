@@ -21,6 +21,7 @@ typedef enum Queue2_Result
     , Queue2_Result_Full
     , Queue2_Result_Empty
     , Queue2_Result_Contention
+    , Queue2_Result_Error
 }
 Queue2_Result;
 
