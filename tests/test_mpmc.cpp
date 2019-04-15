@@ -270,8 +270,14 @@ int main(int, char**)
             , (result.error ? "FAIL: " : "PASS")
             , (result.error ? result.error : "")
         );
+
+        fflush(stdout);
+
+        if (result.error)
+        {
+            return 1;
+        }
     }
 
-
-    return fail_count;
+    return 0;
 }
