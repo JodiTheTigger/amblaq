@@ -9,14 +9,13 @@
 
 #define EXPECT(x) do {if(!(x)) { return {name, #x}; }} while(0)
 
-
 // -----------------------------------------------------------------------------
 // http://the-witness.net/news/2012/11/scopeexit-in-c11/
 // -----------------------------------------------------------------------------
 
 template <typename F>
 struct ScopeExit {
-    ScopeExit(F f) : f(f) {}
+    ScopeExit(F fun) : f(fun) {}
     ~ScopeExit() { f(); }
     F f;
 };
@@ -62,18 +61,18 @@ int main(int, char**)
         {
             const char* name = "Create";
 
-            EXPECT(mpmc_make_queue( 0,       nullptr) < 0);
-            EXPECT(mpmc_make_queue( 1,       nullptr) < 0);
-            EXPECT(mpmc_make_queue(-1,       nullptr) < 0);
-            EXPECT(mpmc_make_queue(-3000000, nullptr) < 0);
+            EXPECT(mpmc_make_queue( 0,       nullptr) == 0);
+            EXPECT(mpmc_make_queue( 1,       nullptr) == 0);
+            EXPECT(mpmc_make_queue(-1,       nullptr) == 0);
+            EXPECT(mpmc_make_queue(-3000000, nullptr) == 0);
             // min size
 
-            EXPECT(mpmc_make_queue(13,  nullptr) < 0);
-            EXPECT(mpmc_make_queue(255, nullptr) < 0);
+            EXPECT(mpmc_make_queue(13,  nullptr) == 0);
+            EXPECT(mpmc_make_queue(255, nullptr) == 0);
             // must be pow2
 
-            EXPECT(mpmc_make_queue(1ULL << 63, nullptr) < 0);
-            EXPECT(mpmc_make_queue(1ULL << 33, nullptr) < 0);
+            EXPECT(mpmc_make_queue(1ULL << 63, nullptr) == 0);
+            EXPECT(mpmc_make_queue(1ULL << 33, nullptr) == 0);
             // Insane sizes
 
             {
@@ -172,8 +171,8 @@ int main(int, char**)
         {
             const char* name = "10,000 sums";
 
-            unsigned in_thread_count  = 2;
-            unsigned out_thread_count = 2;
+            unsigned in_thread_count  = 1;
+            unsigned out_thread_count = 1;
 
             Queue2_Mpmc* q;
             {
@@ -181,7 +180,7 @@ int main(int, char**)
 
                 EXPECT(bytes > 0);
 
-                Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
+                q = static_cast<Queue2_Mpmc*>(malloc(bytes));
                 mpmc_make_queue(1 << 8, q);
             }
             defer(free(q));
@@ -204,7 +203,7 @@ int main(int, char**)
                     {
                         QUEUE2_MPMC_TYPE item{22};
 
-                        for (unsigned i = 0; i < 10000; i++)
+                        for (unsigned j = 0; j < 10000; j++)
                         {
                             while(mpmc_enqueue(q, &item) != Queue2_Result_Ok);
                         }
@@ -222,9 +221,9 @@ int main(int, char**)
                     {
                         QUEUE2_MPMC_TYPE item{0};
 
-                        for (unsigned i = 0; i < 10000; i++)
+                        for (unsigned j = 0; j < 10000; j++)
                         {
-                            while(mpmc_enqueue(q, &item) != Queue2_Result_Ok);
+                            while(mpmc_dequeue(q, &item) != Queue2_Result_Ok);
 
                             global_count.fetch_add
                             (
