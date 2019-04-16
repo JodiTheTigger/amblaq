@@ -81,6 +81,19 @@ if(HAS_DISABLE_RTTI)
     target_compile_options(${PROJECT_TEST} PRIVATE "-fno-rtti")
 endif()
 
+
+# RAM: TODO: Get building with sanatisers to work.
+#target_compile_options(${PROJECT_TEST} PRIVATE "-fsanitize=address")
+#target_compile_options(${PROJECT_TEST} PRIVATE "-fsanitize=thread")
+#target_compile_options(${PROJECT_TEST} PRIVATE "-fsanitize=memory")
+#target_compile_options(${PROJECT_TEST} PRIVATE "-fsanitize=undefined")
+
+#target_link_libraries(
+#    ${PROJECT_TEST}
+#    PRIVATE
+#        tsan
+#)
+
 # ------------------------------------------------------------------------------
 # Dependencies
 # ------------------------------------------------------------------------------
