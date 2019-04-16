@@ -208,7 +208,7 @@ int main(int, char**)
                             while(mpmc_enqueue(q, &item) != Queue2_Result_Ok);
                         }
 
-                        in_done_count.fetch_add(1, std::memory_order_relaxed);
+                        in_done_count.fetch_sub(1, std::memory_order_relaxed);
                     }
                 );
             }
@@ -231,7 +231,7 @@ int main(int, char**)
                             );
                         }
 
-                        out_done_count.fetch_add(1, std::memory_order_relaxed);
+                        out_done_count.fetch_sub(1, std::memory_order_relaxed);
                     }
                 );
             }
@@ -245,7 +245,7 @@ int main(int, char**)
             }
             for (unsigned i = 0; i < out_thread_count; i++)
             {
-                in_threads[i].join();
+                out_threads[i].join();
             }
 
             EXPECT(global_count.load() == (10000ULL*22*out_thread_count));
