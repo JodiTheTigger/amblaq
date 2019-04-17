@@ -7,6 +7,10 @@ set(DIR_INCLUDE include)
 set(DIR_TESTS   tests)
 
 set(PROJECT_TEST ${PROJECT_NAME}_test)
+# ------------------------------------------------------------------------------
+# Options
+# ------------------------------------------------------------------------------
+option(SANATIZE_THREAD "Use thread sanatizer" OFF)
 
 # ------------------------------------------------------------------------------
 # Files
@@ -64,35 +68,30 @@ set_target_properties(
         CXX_EXTENSIONS        OFF
 )
 
+# ------------------------------------------------------------------------------
+# Compiler flags
+# ------------------------------------------------------------------------------
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-Wshadow"        HAS_SHADOW_WARNING)
-CHECK_CXX_COMPILER_FLAG("-fno-exceptions" HAS_DISABLE_EXCEPTIONS)
-CHECK_CXX_COMPILER_FLAG("-fno-rtti"       HAS_DISABLE_RTTI)
 
-if(HAS_SHADOW_WARNING)
-    target_compile_options(${PROJECT_TEST} PRIVATE "-Wshadow")
+function(private_cxx_flags target flag)
+    check_cxx_compiler_flag(flag HAS_FLAG)
+    if(HAS_FLAG)
+        target_compile_options(target PRIVATE flag)
+    endif()
+endfunction()
+
+# ------------------------------------------------------------------------------
+
+private_cxx_flags(${PROJECT_TEST} "-Wshadow")
+private_cxx_flags(${PROJECT_TEST} "-fno-exceptions")
+private_cxx_flags(${PROJECT_TEST} "-fno-rtti")
+
+if (SANATIZE_THREAD)
+    # auto detecting via vmake is too much boilerplate. Have to set linker
+    # flags before the check_cxx_compiler_flag would work, then reset the
+    # cmake state back again.
+    target_compile_options(${PROJECT_TEST} PRIVATE "-fsanitize=thread")
 endif()
-
-if(HAS_DISABLE_EXCEPTIONS)
-    target_compile_options(${PROJECT_TEST} PRIVATE "-fno-exceptions")
-endif()
-
-if(HAS_DISABLE_RTTI)
-    target_compile_options(${PROJECT_TEST} PRIVATE "-fno-rtti")
-endif()
-
-
-# RAM: TODO: Get building with sanatisers to work.
-#target_compile_options(${PROJECT_TEST} PRIVATE "-fsanitize=address")
-#target_compile_options(${PROJECT_TEST} PRIVATE "-fsanitize=thread")
-#target_compile_options(${PROJECT_TEST} PRIVATE "-fsanitize=memory")
-#target_compile_options(${PROJECT_TEST} PRIVATE "-fsanitize=undefined")
-
-#target_link_libraries(
-#    ${PROJECT_TEST}
-#    PRIVATE
-#        tsan
-#)
 
 # ------------------------------------------------------------------------------
 # Dependencies
@@ -111,4 +110,12 @@ if (UNIX)
         PRIVATE
             ${CMAKE_THREAD_LIBS_INIT}
     )
+
+    if (SANATIZE_THREAD)
+        target_link_libraries(
+            ${PROJECT_TEST}
+            PRIVATE
+                tsan
+        )
+    endif()
 endif()
