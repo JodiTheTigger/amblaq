@@ -87,7 +87,7 @@ private_cxx_flags(${PROJECT_TEST} "-fno-exceptions")
 private_cxx_flags(${PROJECT_TEST} "-fno-rtti")
 
 if (SANATIZE_THREAD)
-    # auto detecting via vmake is too much boilerplate. Have to set linker
+    # auto detecting via cmake is too much boilerplate. Have to set linker
     # flags before the check_cxx_compiler_flag would work, then reset the
     # cmake state back again.
     target_compile_options(${PROJECT_TEST} PRIVATE "-fsanitize=thread")
