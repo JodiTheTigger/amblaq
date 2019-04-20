@@ -17,6 +17,7 @@ option(SANATIZE_THREAD "Use thread sanatizer" OFF)
 # ------------------------------------------------------------------------------
 set(SOURCE
     ${DIR_INCLUDE}/atomic-queues/mpmc.h
+    ${DIR_INCLUDE}/atomic-queues/queue-cpp17.h
 
     ${DIR_SOURCE}/mpmc.c
 )
