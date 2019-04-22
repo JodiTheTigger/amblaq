@@ -58,11 +58,27 @@ class Queue_Cpp17 final
         , "CELL_COUNT_POW2 must be a power of 2"
     );
 
+    Queue_Cpp17()
+    {
+        for (size_t i = 0; i < CELL_COUNT; i++)
+        {
+            cells[i].sequence.store(i);
+        }
+    }
+
     Result try_enqueue(DATA_TYPE data)
     {
-        std::size_t pos = enqueue_index.load(std::memory_order_relaxed);
+        std::size_t pos;
+        if constexpr(SINGLE_PRODUCER)
+        {
+            pos = enqueue_index;
+        }
+        else
+        {
+            pos = enqueue_index.load(std::memory_order_relaxed);
+        }
 
-        Cell* cell = &cells[pos & (CELL_COUNT - 1)];
+        Cell* cell = &cells[pos & cell_mask];
 
         size_t sequence = cell->sequence.load(std::memory_order_acquire);
 
@@ -71,22 +87,32 @@ class Queue_Cpp17 final
 
         if (!difference)
         {
-            if
-            (
-                enqueue_index.compare_exchange_weak
-                (
-                      pos
-                    , pos +1
-                    , std::memory_order_relaxed
-                    , std::memory_order_relaxed
-                )
-            )
+            if constexpr(SINGLE_PRODUCER)
             {
-                cell->data = *data;
-
-                cell->sequence.store(pos + 1, std::memory_order_release);
+                enqueue_index++;
+                cell->data = data;
 
                 return Result::Ok;
+            }
+            else
+            {
+                if
+                 (
+                    enqueue_index.compare_exchange_weak
+                    (
+                          pos
+                        , pos + 1
+                        , std::memory_order_relaxed
+                        , std::memory_order_relaxed
+                    )
+                )
+                {
+                    cell->data = *data;
+
+                    cell->sequence.store(pos + 1, std::memory_order_release);
+
+                    return Result::Ok;
+                }
             }
         }
 
@@ -102,7 +128,7 @@ class Queue_Cpp17 final
     {
         std::size_t pos = dequeue_index.load(std::memory_order_relaxed);
 
-        Cell* cell = &cells[pos & (CELL_COUNT - 1)];
+        Cell* cell = &cells[pos & cell_mask];
 
         size_t sequence = cell->sequence.load(std::memory_order_acquire);
 
@@ -126,7 +152,7 @@ class Queue_Cpp17 final
 
                 cell->sequence.store
                 (
-                      pos + (CELL_COUNT - 1) + 1
+                      pos + cell_mask + 1
                     , std::memory_order_release
                 );
 
@@ -151,13 +177,13 @@ private:
 
     uint8_t             pad0[CACHELINE_BYTES];
 
-    Enqueue_Index       enqueue_index;
+    Enqueue_Index       enqueue_index = 0;
     uint8_t             pad2[CACHELINE_BYTES - sizeof(Enqueue_Index)];
 
-    Dequeue_Index       dequeue_index;
+    Dequeue_Index       dequeue_index = 0;
     uint8_t             pad3[CACHELINE_BYTES - sizeof(Dequeue_Index)];
 
-    size_t              cell_mask;
+    size_t              cell_mask = CELL_COUNT - 1;
     uint8_t             pad4[CACHELINE_BYTES - sizeof(size_t)];
 
     std::array<Cell, CELL_COUNT> cells;
