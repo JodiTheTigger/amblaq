@@ -29,6 +29,23 @@ class Queue_Cpp17 final
 {
     using value_type = DATA_TYPE;
 
+    using Enqueue_Index = typename std::conditional
+    <
+          SINGLE_PRODUCER == 0
+        , std::size_t
+        , std::atomic_size_t
+    >
+    ::type;
+
+    using Dequeue_Index = typename std::conditional
+    <
+          SINGLE_CONSUMER == 0
+        , std::size_t
+        , std::atomic_size_t
+    >
+    ::type;
+
+
     static_assert
     (
           CELL_COUNT > 1
@@ -134,16 +151,16 @@ private:
 
     uint8_t             pad0[CACHELINE_BYTES];
 
-    std::atomic_size_t  enqueue_index;
-    uint8_t             pad2[CACHELINE_BYTES - sizeof(std::atomic_size_t)];
+    Enqueue_Index       enqueue_index;
+    uint8_t             pad2[CACHELINE_BYTES - sizeof(Enqueue_Index)];
 
-    std::atomic_size_t  dequeue_index;
-    uint8_t             pad3[CACHELINE_BYTES - sizeof(std::atomic_size_t)];
+    Dequeue_Index       dequeue_index;
+    uint8_t             pad3[CACHELINE_BYTES - sizeof(Dequeue_Index)];
 
     size_t              cell_mask;
     uint8_t             pad4[CACHELINE_BYTES - sizeof(size_t)];
 
-    std::array<Cell, CELL_COUNT_POW2> cells;
+    std::array<Cell, CELL_COUNT> cells;
 
     // -------------------------------------------------------------------------
 };
