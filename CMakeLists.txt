@@ -20,6 +20,7 @@ set(SOURCE
     ${DIR_INCLUDE}/atomic-queues/queue-cpp17.h
 
     ${DIR_SOURCE}/mpmc.c
+    ${DIR_SOURCE}/mpmc-again.c
 )
 
 set(SOURCE_TESTS
