@@ -10,46 +10,60 @@
 
 // -----------------------------------------------------------------------------
 
+#if !defined(QUEUE_COMMON_DEFINED)
 
-#if !defined(__cplusplus)
+    #define QUEUE_COMMON_DEFINED
 
-    #if !defined(__STDC__)
-        #error Standard C is required for the C version of this file
+    #if !defined(__cplusplus)
+
+        #if !defined(__STDC__)
+            #error Standard C is required for the C version of this file
+        #endif
+
+        #if (__STDC_VERSION__ < 201112L)
+            #error C11 is required for the C version of this file
+        #endif
+
+        #include <stdatomic.h>
+
+        #if defined(__STDC_NO_ATOMICS__)
+            #error Oh no, your C compiler doesn't support C11 atomics :-(
+        #endif
+
+        #define QUEUE_ATOMIC_SIZE_T atomic_size_t
+        #define QUEUE_ORDER_RELAXED memory_order_relaxed
+        #define QUEUE_ORDER_RELEASE memory_order_release
+        #define QUEUE_ORDER_ACQUIRE memory_order_acquire
+        #define QUEUE_ATOMIC_STORE  atomic_store_explicit
+        #define QUEUE_ATOMIC_LOAD   atomic_load_explicit
+
+    #else
+        #if (__cplusplus <= 199711L)
+            #error C++11 is required for the C++ version of this file
+        #endif
+
+        #include <atomic>
+
+        #define QUEUE_ATOMIC_SIZE_T std::atomic_size_t
+        #define QUEUE_ORDER_RELAXED std::memory_order_relaxed
+        #define QUEUE_ORDER_RELEASE std::memory_order_release
+        #define QUEUE_ORDER_ACQUIRE std::memory_order_acquire
+        #define QUEUE_ATOMIC_STORE  std::atomic_store_explicit<size_t>
+        #define QUEUE_ATOMIC_LOAD   std::atomic_load_explicit
+
     #endif
 
-    #if (__STDC_VERSION__ < 201112L)
-        #error C11 is required for the C version of this file
+    #define QUEUE_MACRO_MERGE_BASE(a, b) a ## b
+    #define QUEUE_MACRO_MERGE(a, b) QUEUE_MACRO_MERGE_BASE(a, b)
+
+    #if !defined(QUEUE_CACHELINE_BYTES)
+        #define QUEUE_CACHELINE_BYTES 64
     #endif
 
-    #include <stdatomic.h>
-
-    #if defined(__STDC_NO_ATOMICS__)
-        #error Oh no, your C compiler doesn't support C11 atomics :-(
+    #if !defined(QUEUE_TOO_BIG)
+        #define QUEUE_TOO_BIG (1024ULL * 1024ULL * 256ULL)
     #endif
-
-    #define QUEUE_ATOMIC_SIZE_T atomic_size_t
-    #define QUEUE_ORDER_RELAXED memory_order_relaxed
-    #define QUEUE_ORDER_RELEASE memory_order_release
-    #define QUEUE_ORDER_ACQUIRE memory_order_acquire
-    #define QUEUE_ATOMIC_STORE  atomic_store_explicit
-    #define QUEUE_ATOMIC_LOAD   atomic_load_explicit
-
-#else
-    #if (__cplusplus <= 199711L)
-        #error C++11 is required for the C++ version of this file
-    #endif
-
-    #include <atomic>
-
-    #define QUEUE_ATOMIC_SIZE_T std::atomic_size_t
-    #define QUEUE_ORDER_RELAXED std::memory_order_relaxed
-    #define QUEUE_ORDER_RELEASE std::memory_order_release
-    #define QUEUE_ORDER_ACQUIRE std::memory_order_acquire
-    #define QUEUE_ATOMIC_STORE  std::atomic_store_explicit<size_t>
-    #define QUEUE_ATOMIC_LOAD   std::atomic_load_explicit
-
 #endif
-
 // -----------------------------------------------------------------------------
 
 #if (QUEUE_MP)
@@ -105,9 +119,6 @@
     #define QUEUE_C_IF_CAS(a, b, c, d, e) a = c;
 #endif
 
-#define QUEUE_MACRO_MERGE_BASE(a, b) a ## b
-#define QUEUE_MACRO_MERGE(a, b) QUEUE_MACRO_MERGE_BASE(a, b)
-
 #define QUEUE_FN_A QUEUE_MACRO_MERGE(QUEUE_P_NAME_FN, QUEUE_C_NAME)
 #define QUEUE_FN(name) QUEUE_MACRO_MERGE(QUEUE_MACRO_MERGE(QUEUE_FN_A, _),     \
                                          QUEUE_MACRO_MERGE(name##_, QUEUE_TYPE))
@@ -116,9 +127,6 @@
 #define QUEUE_STRUCT_B QUEUE_MACRO_MERGE(QUEUE_STRUCT_A, _)
 #define QUEUE_STRUCT_C QUEUE_MACRO_MERGE(QUEUE_STRUCT_B, QUEUE_TYPE)
 #define QUEUE_STRUCT   QUEUE_MACRO_MERGE(Queue_, QUEUE_STRUCT_C)
-
-#define QUEUE_CACHELINE_BYTES 64
-#define QUEUE_TOO_BIG         (1024ULL * 1024ULL * 256ULL)
 
 // -----------------------------------------------------------------------------
 
@@ -358,3 +366,22 @@ Queue_Result QUEUE_FN(dequeue)(QUEUE_STRUCT* queue, QUEUE_TYPE* data)
 #undef QUEUE_TYPE
 #undef QUEUE_MP
 #undef QUEUE_MC
+
+#undef QUEUE_P_NAME
+#undef QUEUE_P_TYPE
+#undef QUEUE_P_SETUP
+#undef QUEUE_P_LOAD
+#undef QUEUE_P_IF_CAS
+
+#undef QUEUE_C_NAME
+#undef QUEUE_C_TYPE
+#undef QUEUE_C_SETUP
+#undef QUEUE_C_LOAD
+#undef QUEUE_C_IF_CAS
+
+#undef QUEUE_FN_A
+#undef QUEUE_FN
+#undef QUEUE_STRUCT_A
+#undef QUEUE_STRUCT_B
+#undef QUEUE_STRUCT_C
+#undef QUEUE_STRUCT
