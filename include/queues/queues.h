@@ -113,7 +113,9 @@
                                          QUEUE_MACRO_MERGE(name##_, QUEUE_TYPE))
 
 #define QUEUE_STRUCT_A QUEUE_MACRO_MERGE(QUEUE_P_NAME_TYPE, QUEUE_C_NAME)
-#define QUEUE_STRUCT   QUEUE_MACRO_MERGE(Queue_, QUEUE_STRUCT_A)
+#define QUEUE_STRUCT_B QUEUE_MACRO_MERGE(QUEUE_STRUCT_A, _)
+#define QUEUE_STRUCT_C QUEUE_MACRO_MERGE(QUEUE_STRUCT_B, QUEUE_TYPE)
+#define QUEUE_STRUCT   QUEUE_MACRO_MERGE(Queue_, QUEUE_STRUCT_C)
 
 #define QUEUE_CACHELINE_BYTES 64
 #define QUEUE_TOO_BIG         (1024ULL * 1024ULL * 256ULL)
@@ -173,6 +175,11 @@ Queue_Result QUEUE_FN(make_queue)
     , size_t*       bytes
 )
 {
+    if (!bytes)
+    {
+        return Queue_Result_Error_Null_Bytes;
+    }
+
     if (cell_count < 2)
     {
         return Queue_Result_Error_Too_Small;
@@ -186,11 +193,6 @@ Queue_Result QUEUE_FN(make_queue)
     if (cell_count & (cell_count - 1))
     {
         return Queue_Result_Error_Not_Pow2;
-    }
-
-    if (!bytes)
-    {
-        return Queue_Result_Error_Null_Bytes;
     }
 
     size_t bytes_local = sizeof(QUEUE_STRUCT) +  (sizeof(Cell) * cell_count);
