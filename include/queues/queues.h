@@ -170,7 +170,7 @@ Queue_Result QUEUE_FN(make_queue)
 (
       size_t        cell_count
     , QUEUE_STRUCT* queue
-    , size_t**      bytes
+    , size_t*       bytes
 )
 {
     if (cell_count < 2)
@@ -193,20 +193,15 @@ Queue_Result QUEUE_FN(make_queue)
         return Queue_Result_Error_Null_Bytes;
     }
 
-    if (!(*bytes))
-    {
-        return Queue_Result_Error_Null_Bytes;
-    }
-
     size_t bytes_local = sizeof(QUEUE_STRUCT) +  (sizeof(Cell) * cell_count);
 
     if (!queue)
     {
-        **bytes = bytes_local;
+        *bytes = bytes_local;
         return Queue_Result_Ok;
     }
 
-    if (**bytes < bytes_local)
+    if (*bytes < bytes_local)
     {
         return Queue_Result_Error_Bytes_Smaller_Than_Needed;
     }
