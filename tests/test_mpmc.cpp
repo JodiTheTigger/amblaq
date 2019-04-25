@@ -1,5 +1,3 @@
-#include <atomic-queues/mpmc.h>
-
 #include <initializer_list>
 #include <cstdio>
 #include <functional>
@@ -7,7 +5,15 @@
 #include <thread>
 #include <atomic>
 
-#define EXPECT(x) do {if(!(x)) { return {name, #x}; }} while(0)
+// -----------------------------------------------------------------------------
+
+#define QUEUE_MP   1
+#define QUEUE_MC   1
+#define QUEUE_TYPE uint64_t
+#include <queues/queues.h>
+
+typedef Queue_Mpmc_uint64_t Queue_Struct;
+typedef uint64_t            Queue_Type;
 
 // -----------------------------------------------------------------------------
 // http://the-witness.net/news/2012/11/scopeexit-in-c11/
@@ -32,6 +38,10 @@ ScopeExit<F> MakeScopeExit(F f) {
 
 // -----------------------------------------------------------------------------
 
+#define EXPECT(x) do {if(!(x)) { return {name, #x}; }} while(0)
+
+// -----------------------------------------------------------------------------
+
 int main(int, char**)
 {
     struct Result
@@ -48,11 +58,9 @@ int main(int, char**)
 
             // Just expect not to crash, not testing results
 
-            mpmc_make_queue(0, nullptr);
-            mpmc_try_enqueue(nullptr, nullptr);
-            mpmc_try_dequeue(nullptr, nullptr);
-            mpmc_enqueue(nullptr, nullptr);
-            mpmc_dequeue(nullptr, nullptr);
+            Queue_Result result = mpmc_make_queue_uint64_t(0, nullptr, nullptr);
+
+            EXPECT(result == Queue_Result_Error_Null_Bytes);
 
             return {name, nullptr};
         }
@@ -61,32 +69,55 @@ int main(int, char**)
         {
             const char* name = "Create";
 
-            EXPECT(mpmc_make_queue( 0,       nullptr) == 0);
-            EXPECT(mpmc_make_queue( 1,       nullptr) == 0);
-            EXPECT(mpmc_make_queue(-1,       nullptr) == 0);
-            EXPECT(mpmc_make_queue(-3000000, nullptr) == 0);
+            size_t bytes;
+
+            auto make = [](size_t a, Queue_Struct* b, size_t* c) -> Queue_Result
+            {
+                return mpmc_make_queue_uint64_t(a, b, c);
+            };
+
+            EXPECT(make( 0, nullptr, &bytes) == Queue_Result_Error_Too_Small);
+            EXPECT(make( 1, nullptr, &bytes) == Queue_Result_Error_Too_Small);
             // min size
 
-            EXPECT(mpmc_make_queue(13,  nullptr) == 0);
-            EXPECT(mpmc_make_queue(255, nullptr) == 0);
+            EXPECT(make(13,  nullptr, &bytes) == Queue_Result_Error_Not_Pow2);
+            EXPECT(make(255, nullptr, &bytes) == Queue_Result_Error_Not_Pow2);
             // must be pow2
 
-            EXPECT(mpmc_make_queue(1ULL << 63, nullptr) == 0);
-            EXPECT(mpmc_make_queue(1ULL << 33, nullptr) == 0);
+            EXPECT(make(-1, nullptr, &bytes) == Queue_Result_Error_Too_Big);
+
+            EXPECT
+            (
+                   make(-3000000, nullptr, &bytes)
+                == Queue_Result_Error_Too_Big
+            );
+
+            EXPECT
+            (
+                   make(1ULL << 63, nullptr, &bytes)
+                == Queue_Result_Error_Too_Big
+            );
+
+            EXPECT
+            (
+                   make(1ULL << 33, nullptr, &bytes)
+                == Queue_Result_Error_Too_Big
+            );
             // Insane sizes
 
             {
-                size_t bytes = mpmc_make_queue(1 << 8, nullptr);
+                mpmc_make_queue_uint64_t(1 << 8, nullptr, &bytes);
 
                 EXPECT(bytes > 0);
                 EXPECT(bytes < 100000);
 
-                Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
+                Queue_Struct* q = static_cast<Queue_Struct*>(malloc(bytes));
                 defer(free(q));
 
-                size_t bytes2 = mpmc_make_queue(1 << 8, q);
+                Queue_Result create =
+                    mpmc_make_queue_uint64_t(1 << 8, q, &bytes);
 
-                EXPECT(bytes2 == bytes);
+                EXPECT(create == Queue_Result_Ok);
             }
 
             return {name, nullptr};
@@ -97,29 +128,32 @@ int main(int, char**)
             const char* name = "Empty";
 
             {
-                size_t bytes = mpmc_make_queue(1 << 8, nullptr);
+                size_t bytes = 0;
+
+                mpmc_make_queue_uint64_t(1 << 8, nullptr, &bytes);
 
                 EXPECT(bytes > 0);
 
-                Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
+                Queue_Struct* q = static_cast<Queue_Struct*>(malloc(bytes));
                 defer(free(q));
 
-                mpmc_make_queue(1 << 8, q);
+                mpmc_make_queue_uint64_t(1 << 8, q, &bytes);
 
                 {
-                    QUEUE2_MPMC_TYPE data{};
+                    Queue_Type data{};
 
-                    Queue2_Result try_dequeue = mpmc_try_dequeue(q, &data);
+                    Queue_Result try_dequeue =
+                        mpmc_try_dequeue_uint64_t(q, &data);
 
-                    EXPECT(try_dequeue == Queue2_Result_Empty);
+                    EXPECT(try_dequeue == Queue_Result_Empty);
                 }
 
                 {
-                    QUEUE2_MPMC_TYPE data{};
+                    Queue_Type data{};
 
-                    Queue2_Result dequeue = mpmc_dequeue(q, &data);
+                    Queue_Result dequeue = mpmc_dequeue_uint64_t(q, &data);
 
-                    EXPECT(dequeue == Queue2_Result_Empty);
+                    EXPECT(dequeue == Queue_Result_Empty);
                 }
             }
 
@@ -131,36 +165,37 @@ int main(int, char**)
             const char* name = "Full";
 
             {
-                size_t bytes = mpmc_make_queue(1 << 8, nullptr);
+                size_t bytes = 0;
+
+                mpmc_make_queue_uint64_t(1 << 8, nullptr, &bytes);
 
                 EXPECT(bytes > 0);
 
-                Queue2_Mpmc* q = static_cast<Queue2_Mpmc*>(malloc(bytes));
+                Queue_Struct* q = static_cast<Queue_Struct*>(malloc(bytes));
                 defer(free(q));
-
-                mpmc_make_queue(1 << 8, q);
 
                 for (unsigned i = 0; i < (1 << 8); i++)
                 {
-                    QUEUE2_MPMC_TYPE data{};
+                    Queue_Type data{};
 
-                    EXPECT(mpmc_enqueue(q, &data) == Queue2_Result_Ok);
+                    EXPECT(mpmc_enqueue_uint64_t(q, &data) == Queue_Result_Ok);
                 }
 
                 {
-                    QUEUE2_MPMC_TYPE data{};
+                    Queue_Type data{};
 
-                    Queue2_Result try_dequeue = mpmc_try_enqueue(q, &data);
+                    Queue_Result try_dequeue =
+                        mpmc_try_enqueue_uint64_t(q, &data);
 
-                    EXPECT(try_dequeue == Queue2_Result_Full);
+                    EXPECT(try_dequeue == Queue_Result_Full);
                 }
 
                 {
-                    QUEUE2_MPMC_TYPE data{};
+                    Queue_Type data{};
 
-                    Queue2_Result dequeue = mpmc_enqueue(q, &data);
+                    Queue_Result dequeue = mpmc_enqueue_uint64_t(q, &data);
 
-                    EXPECT(dequeue == Queue2_Result_Full);
+                    EXPECT(dequeue == Queue_Result_Full);
                 }
             }
 
@@ -174,14 +209,20 @@ int main(int, char**)
             unsigned in_thread_count  = 1;
             unsigned out_thread_count = 1;
 
-            Queue2_Mpmc* q;
+            Queue_Struct* q;
             {
-                size_t bytes = mpmc_make_queue(1 << 8, nullptr);
+                size_t bytes = 0;
+
+                mpmc_make_queue_uint64_t(1 << 8, nullptr, &bytes);
 
                 EXPECT(bytes > 0);
 
-                q = static_cast<Queue2_Mpmc*>(malloc(bytes));
-                mpmc_make_queue(1 << 8, q);
+                q = static_cast<Queue_Struct*>(malloc(bytes));
+
+                Queue_Result create =
+                    mpmc_make_queue_uint64_t(1 << 8, q, &bytes);
+
+                EXPECT(create == Queue_Result_Ok);
             }
             defer(free(q));
 
@@ -201,11 +242,15 @@ int main(int, char**)
                 (
                     [q, &in_done_count]()
                     {
-                        QUEUE2_MPMC_TYPE item{22};
+                        Queue_Type item{22};
 
                         for (unsigned j = 0; j < 10000; j++)
                         {
-                            while(mpmc_enqueue(q, &item) != Queue2_Result_Ok);
+                            while
+                            (
+                                   mpmc_enqueue_uint64_t(q, &item)
+                                != Queue_Result_Ok
+                            );
                         }
 
                         in_done_count.fetch_sub(1, std::memory_order_relaxed);
@@ -219,11 +264,15 @@ int main(int, char**)
                 (
                     [q, &out_done_count, &global_count]()
                     {
-                        QUEUE2_MPMC_TYPE item{0};
+                        Queue_Type item{0};
 
                         for (unsigned j = 0; j < 10000; j++)
                         {
-                            while(mpmc_dequeue(q, &item) != Queue2_Result_Ok);
+                            while
+                            (
+                                   mpmc_dequeue_uint64_t(q, &item)
+                                != Queue_Result_Ok
+                            );
 
                             global_count.fetch_add
                             (
