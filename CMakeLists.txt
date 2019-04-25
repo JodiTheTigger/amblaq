@@ -1,10 +1,10 @@
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.1)  # target_sources
 project(queues2)
 
-set(DIR_SOURCE  src)
-set(DIR_INCLUDE include)
-set(DIR_TESTS   tests)
+set(DIR_SOURCE  ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(DIR_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(DIR_TESTS   ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 set(PROJECT_TEST ${PROJECT_NAME}_test)
 # ------------------------------------------------------------------------------
@@ -16,11 +16,7 @@ option(SANATIZE_THREAD "Use thread sanatizer" OFF)
 # Files
 # ------------------------------------------------------------------------------
 set(SOURCE
-    ${DIR_INCLUDE}/atomic-queues/mpmc.h
-    ${DIR_INCLUDE}/atomic-queues/queue-cpp17.h
-
-    ${DIR_SOURCE}/mpmc.c
-    ${DIR_SOURCE}/mpmc-again.c
+    ${DIR_INCLUDE}/queues/queues.h
 )
 
 set(SOURCE_TESTS
@@ -30,15 +26,13 @@ set(SOURCE_TESTS
 # ------------------------------------------------------------------------------
 # Binaries
 # ------------------------------------------------------------------------------
-add_library   (${PROJECT_NAME} ${SOURCE})
+add_library   (${PROJECT_NAME} INTERFACE)
 add_executable(${PROJECT_TEST} ${SOURCE_TESTS})
 
 target_include_directories(
     ${PROJECT_NAME}
-    PUBLIC
+    INTERFACE
         ${DIR_INCLUDE}
-    PRIVATE
-        ${DIR_SOURCE}
 )
 
 target_include_directories(
@@ -47,17 +41,11 @@ target_include_directories(
         ${DIR_TESTS}
 )
 
+target_sources(${PROJECT_NAME} INTERFACE ${SOURCE})
+
 # ------------------------------------------------------------------------------
 # Properties
 # ------------------------------------------------------------------------------
-set_target_properties(
-    ${PROJECT_NAME}
-    PROPERTIES
-        C_STANDARD          11
-        C_STANDARD_REQUIRED ON
-        C_EXTENSIONS        OFF
-)
-
 set_target_properties(
     ${PROJECT_TEST}
     PROPERTIES
