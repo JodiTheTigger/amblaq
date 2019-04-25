@@ -5,7 +5,7 @@
 #include <string.h>
 
 #if !defined(QUEUE_TYPE) || !defined(QUEUE_MP) || !defined(QUEUE_MC)
-    #error("Please define QUEUE_TYPE, QUEUE_MP and QUEUE_MC")
+    #error Please define QUEUE_TYPE, QUEUE_MP and QUEUE_MC
 #endif
 
 // -----------------------------------------------------------------------------
@@ -13,10 +13,18 @@
 
 #if !defined(__cplusplus)
 
+    #if !defined(__STDC__)
+        #error Standard C is required for the C version of this file
+    #endif
+
+    #if (__STDC_VERSION__ < 201112L)
+        #error C11 is required for the C version of this file
+    #endif
+
     #include <stdatomic.h>
 
     #if defined(__STDC_NO_ATOMICS__)
-        #error("Oh no, your C compiler doesn't support C11 atomics :-(")
+        #error Oh no, your C compiler doesn't support C11 atomics :-(
     #endif
 
     #define QUEUE_ATOMIC_SIZE_T atomic_size_t
@@ -27,6 +35,9 @@
     #define QUEUE_ATOMIC_LOAD   atomic_load_explicit
 
 #else
+    #if (__cplusplus <= 199711L)
+        #error C++11 is required for the C++ version of this file
+    #endif
 
     #include <atomic>
 
