@@ -63,6 +63,23 @@
     #if !defined(QUEUE_TOO_BIG)
         #define QUEUE_TOO_BIG (1024ULL * 1024ULL * 256ULL)
     #endif
+
+    typedef enum Queue_Result
+    {
+          Queue_Result_Ok
+        , Queue_Result_Full
+        , Queue_Result_Empty
+        , Queue_Result_Contention
+
+        , Queue_Result_Error = 128
+        , Queue_Result_Error_Too_Small
+        , Queue_Result_Error_Too_Big
+        , Queue_Result_Error_Not_Pow2
+        , Queue_Result_Error_Not_Aligned_16_Bytes
+        , Queue_Result_Error_Null_Bytes
+        , Queue_Result_Error_Bytes_Smaller_Than_Needed
+    }
+    Queue_Result;
 #endif
 // -----------------------------------------------------------------------------
 
@@ -87,6 +104,7 @@
         )
 #else
     #define QUEUE_P_NAME                  sp
+    #define QUEUE_P_NAME_TYPE             Sp
     #define QUEUE_P_TYPE                  size_t
     #define QUEUE_P_SETUP(a, b, c)
     #define QUEUE_P_LOAD(a, b)            a
@@ -127,6 +145,7 @@
 #define QUEUE_STRUCT_B QUEUE_MACRO_MERGE(QUEUE_STRUCT_A, _)
 #define QUEUE_STRUCT_C QUEUE_MACRO_MERGE(QUEUE_STRUCT_B, QUEUE_TYPE)
 #define QUEUE_STRUCT   QUEUE_MACRO_MERGE(Queue_, QUEUE_STRUCT_C)
+#define QUEUE_CELL     QUEUE_MACRO_MERGE(Cell_, QUEUE_STRUCT_C)
 
 // -----------------------------------------------------------------------------
 
@@ -134,12 +153,12 @@
 extern "C" {
 #endif
 
-typedef struct Cell
+typedef struct QUEUE_CELL
 {
     QUEUE_ATOMIC_SIZE_T sequence;
     QUEUE_TYPE          data;
 }
-Cell;
+QUEUE_CELL;
 
 typedef struct QUEUE_STRUCT
 {
@@ -154,27 +173,9 @@ typedef struct QUEUE_STRUCT
     size_t         cell_mask;
     uint8_t        pad4[QUEUE_CACHELINE_BYTES - sizeof(size_t)];
 
-    Cell           cells[];
+    QUEUE_CELL     cells[];
 }
 QUEUE_STRUCT;
-
-typedef enum Queue_Result
-{
-      Queue_Result_Ok
-    , Queue_Result_Full
-    , Queue_Result_Empty
-    , Queue_Result_Contention
-
-    , Queue_Result_Error = 128
-    , Queue_Result_Error_Too_Small
-    , Queue_Result_Error_Too_Big
-    , Queue_Result_Error_Not_Pow2
-    , Queue_Result_Error_Not_Aligned_16_Bytes
-    , Queue_Result_Error_Null_Bytes
-    , Queue_Result_Error_Bytes_Smaller_Than_Needed
-}
-Queue_Result;
-
 
 Queue_Result QUEUE_FN(make_queue)
 (
@@ -203,7 +204,9 @@ Queue_Result QUEUE_FN(make_queue)
         return Queue_Result_Error_Not_Pow2;
     }
 
-    size_t bytes_local = sizeof(QUEUE_STRUCT) +  (sizeof(Cell) * cell_count);
+    size_t bytes_local =
+          sizeof(QUEUE_STRUCT)
+        + (sizeof(QUEUE_CELL) * cell_count);
 
     if (!queue)
     {
@@ -250,7 +253,7 @@ Queue_Result QUEUE_FN(try_enqueue)(QUEUE_STRUCT* queue, QUEUE_TYPE const* data)
     size_t pos =    
         QUEUE_P_LOAD(queue->enqueue_index, QUEUE_ORDER_RELAXED);
 
-    Cell* cell = &queue->cells[pos & queue->cell_mask];
+    QUEUE_CELL* cell = &queue->cells[pos & queue->cell_mask];
 
     size_t sequence =
         QUEUE_ATOMIC_LOAD(&cell->sequence, QUEUE_ORDER_ACQUIRE);
@@ -294,7 +297,7 @@ Queue_Result QUEUE_FN(try_dequeue)(QUEUE_STRUCT* queue, QUEUE_TYPE* data)
     size_t pos =
         QUEUE_C_LOAD(queue->dequeue_index, QUEUE_ORDER_RELAXED);
 
-    Cell* cell = &queue->cells[pos & queue->cell_mask];
+    QUEUE_CELL* cell = &queue->cells[pos & queue->cell_mask];
 
     size_t sequence =
         QUEUE_ATOMIC_LOAD(&cell->sequence, QUEUE_ORDER_ACQUIRE);
@@ -367,6 +370,8 @@ Queue_Result QUEUE_FN(dequeue)(QUEUE_STRUCT* queue, QUEUE_TYPE* data)
 #undef QUEUE_MP
 #undef QUEUE_MC
 
+#undef QUEUE_P_NAME_FN
+#undef QUEUE_P_NAME_TYPE
 #undef QUEUE_P_NAME
 #undef QUEUE_P_TYPE
 #undef QUEUE_P_SETUP
@@ -385,3 +390,4 @@ Queue_Result QUEUE_FN(dequeue)(QUEUE_STRUCT* queue, QUEUE_TYPE* data)
 #undef QUEUE_STRUCT_B
 #undef QUEUE_STRUCT_C
 #undef QUEUE_STRUCT
+#undef QUEUE_CELL
