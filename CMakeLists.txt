@@ -21,6 +21,7 @@ set(SOURCE
 
 set(SOURCE_TESTS
     ${DIR_TESTS}/test_mpmc.cpp
+    ${DIR_TESTS}/test_queues.cpp
 )
 
 # ------------------------------------------------------------------------------
