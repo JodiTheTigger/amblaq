@@ -153,6 +153,28 @@
 extern "C" {
 #endif
 
+// -----------------------------------------------------------------------------
+
+typedef struct QUEUE_STRUCT QUEUE_STRUCT;
+
+Queue_Result QUEUE_FN(make_queue)
+(
+      size_t        cell_count
+    , QUEUE_STRUCT* queue
+    , size_t*       bytes
+);
+
+Queue_Result QUEUE_FN(try_enqueue)(QUEUE_STRUCT* queue, QUEUE_TYPE const* data);
+Queue_Result QUEUE_FN(try_dequeue)(QUEUE_STRUCT* queue, QUEUE_TYPE*       data);
+Queue_Result QUEUE_FN(enqueue)    (QUEUE_STRUCT* queue, QUEUE_TYPE const* data);
+Queue_Result QUEUE_FN(dequeue)    (QUEUE_STRUCT* queue, QUEUE_TYPE*       data);
+
+// -----------------------------------------------------------------------------
+
+#if defined(QUEUE_IMPLEMENTATION)
+
+#undef QUEUE_IMPLEMENTATION
+
 typedef struct QUEUE_CELL
 {
     QUEUE_ATOMIC_SIZE_T sequence;
@@ -361,6 +383,7 @@ Queue_Result QUEUE_FN(dequeue)(QUEUE_STRUCT* queue, QUEUE_TYPE* data)
 
     return result;
 }
+#endif
 
 #ifdef __cplusplus
 }

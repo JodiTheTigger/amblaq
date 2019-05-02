@@ -10,6 +10,7 @@
 #define QUEUE_MP   1
 #define QUEUE_MC   1
 #define QUEUE_TYPE uint64_t
+#define QUEUE_IMPLEMENTATION
 #include <queues/queues.h>
 
 typedef Queue_Mpmc_uint64_t Queue_Struct;
