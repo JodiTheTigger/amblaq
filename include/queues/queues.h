@@ -53,8 +53,8 @@
 
     #endif
 
-    #define QUEUE_MACRO_MERGE_BASE(a, b) a ## b
-    #define QUEUE_MACRO_MERGE(a, b) QUEUE_MACRO_MERGE_BASE(a, b)
+    #define QUEUE_MERGE_BASE(a, b) a ## b
+    #define QUEUE_MERGE(a, b)      QUEUE_MERGE_BASE(a, b)
 
     #if !defined(QUEUE_CACHELINE_BYTES)
         #define QUEUE_CACHELINE_BYTES 64
@@ -103,7 +103,7 @@
             )                                                                  \
         )
 #else
-    #define QUEUE_P_NAME                  sp
+    #define QUEUE_P_NAME_FN               sp
     #define QUEUE_P_NAME_TYPE             Sp
     #define QUEUE_P_TYPE                  size_t
     #define QUEUE_P_SETUP(a, b, c)
@@ -137,15 +137,15 @@
     #define QUEUE_C_IF_CAS(a, b, c, d, e) a = c;
 #endif
 
-#define QUEUE_FN_A QUEUE_MACRO_MERGE(QUEUE_P_NAME_FN, QUEUE_C_NAME)
-#define QUEUE_FN(name) QUEUE_MACRO_MERGE(QUEUE_MACRO_MERGE(QUEUE_FN_A, _),     \
-                                         QUEUE_MACRO_MERGE(name##_, QUEUE_TYPE))
+#define QUEUE_FN_A     QUEUE_MERGE(QUEUE_P_NAME_FN, QUEUE_C_NAME)
+#define QUEUE_FN_B     QUEUE_MERGE(QUEUE_FN_A, _)
+#define QUEUE_FN(name) QUEUE_MERGE(QUEUE_MERGE(QUEUE_FN_B, name##_), QUEUE_TYPE)
 
-#define QUEUE_STRUCT_A QUEUE_MACRO_MERGE(QUEUE_P_NAME_TYPE, QUEUE_C_NAME)
-#define QUEUE_STRUCT_B QUEUE_MACRO_MERGE(QUEUE_STRUCT_A, _)
-#define QUEUE_STRUCT_C QUEUE_MACRO_MERGE(QUEUE_STRUCT_B, QUEUE_TYPE)
-#define QUEUE_STRUCT   QUEUE_MACRO_MERGE(Queue_, QUEUE_STRUCT_C)
-#define QUEUE_CELL     QUEUE_MACRO_MERGE(Cell_, QUEUE_STRUCT_C)
+#define QUEUE_STRUCT_A QUEUE_MERGE(QUEUE_P_NAME_TYPE, QUEUE_C_NAME)
+#define QUEUE_STRUCT_B QUEUE_MERGE(QUEUE_STRUCT_A, _)
+#define QUEUE_STRUCT_C QUEUE_MERGE(QUEUE_STRUCT_B, QUEUE_TYPE)
+#define QUEUE_STRUCT   QUEUE_MERGE(Queue_, QUEUE_STRUCT_C)
+#define QUEUE_CELL     QUEUE_MERGE(Cell_, QUEUE_STRUCT_C)
 
 // -----------------------------------------------------------------------------
 
