@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 // -----------------------------------------------------------------------------
 
@@ -45,8 +46,18 @@ typedef enum Tag
     , Mpsc
     , Spmc
     , Mpmc
+
+    , Max = Mpmc
 }
 Tag;
+
+const char* tag_to_name[] =
+{
+      "Spsc"
+    , "Mpsc"
+    , "Spmc"
+    , "Mpmc"
+};
 
 Queue_Result make(Tag tag, size_t cell_count, void* queue, size_t* bytes)
 {
@@ -204,4 +215,52 @@ const char* create(Tag tag)
     }
 
     return NULL;
+}
+
+typedef const char* (*Test)(Tag);
+#define TEST(x) { #x, x }
+
+struct
+{
+    const char* name;
+    Test        test;
+}
+static tests[] =
+{
+      TEST(null_pointers)
+    , TEST(create)
+};
+
+#define TEST_COUNT 2
+
+int main(int arg_count, char** args)
+{
+    (void) arg_count;
+    (void) args;
+
+    for (unsigned tag = 0; tag < (Max + 1); tag++)
+    {
+        for (unsigned j = 0; j < TEST_COUNT; j++)
+        {
+            const char* error = tests[j].test(tag);
+
+            printf
+            (
+                  "Test: %s: %-20s: %s%s\n"
+                , tag_to_name[tag]
+                , tests[j].name
+                , (error ? "FAIL: " : "PASS")
+                , (error ? error : "")
+            );
+
+            fflush(stdout);
+
+            if (error)
+            {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
 }
