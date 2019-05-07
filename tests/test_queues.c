@@ -1,6 +1,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <threads.h>
+
+#if defined(__STDC_NO_THREADS__)
+#pramga message No C11 threading support, skipping threading tests (auto pass)
+#define QUEUE_TEST_THREADS 0
+#else
+#define QUEUE_TEST_THREADS 1
+#endif
 
 // -----------------------------------------------------------------------------
 
@@ -51,7 +59,7 @@ typedef enum Tag
 }
 Tag;
 
-const char* tag_to_name[] =
+static const char* tag_to_name[] =
 {
       "Spsc"
     , "Mpsc"
@@ -155,20 +163,28 @@ Queue_Result dequeue(Tag tag, void* q, Data* d)
 
 // -----------------------------------------------------------------------------
 
-#define EXPECT(x) do {if(!(x)) { return #x; }} while(0)
+#define EXPECT(x) do {if(!(x)) { free(q); return #x; }} while(0)
 
-const char* null_pointers(Tag tag)
+const char* null_pointers(Tag tag, unsigned count_in, unsigned count_out)
 {
+    (void) count_in;
+    (void) count_out;
+
     Queue_Result result = make(tag, 0, NULL, NULL);
+    void* q = NULL;
 
     EXPECT(result == Queue_Result_Error_Null_Bytes);
 
     return NULL;
 }
 
-const char* create(Tag tag)
+const char* create(Tag tag, unsigned count_in, unsigned count_out)
 {
+    (void) count_in;
+    (void) count_out;
+
     size_t bytes = -1;
+    void* q = NULL;
 
     EXPECT(make(tag, 0, NULL, &bytes) == Queue_Result_Error_Too_Small);
     EXPECT(make(tag, 1, NULL, &bytes) == Queue_Result_Error_Too_Small);
@@ -205,11 +221,11 @@ const char* create(Tag tag)
         EXPECT(bytes > 0);
         EXPECT(bytes < 100000);
 
-        void* q = malloc(bytes);
+        void* queue = malloc(bytes);
 
         Queue_Result create = make(tag, 1 << 8, q, &bytes);
 
-        free(q);
+        free(queue);
 
         EXPECT(create == Queue_Result_Ok);
     }
@@ -217,7 +233,105 @@ const char* create(Tag tag)
     return NULL;
 }
 
-typedef const char* (*Test)(Tag);
+const char* empty(Tag tag, unsigned count_in, unsigned count_out)
+{
+    (void) count_in;
+    (void) count_out;
+
+    size_t bytes = 0;
+    void* q = NULL;
+
+    make(tag, 1 << 8, NULL, &bytes);
+
+    EXPECT(bytes > 0);
+
+    q = malloc(bytes);
+
+    make(tag, 1 << 8, q, &bytes);
+
+    {
+        Data data = {0};
+
+        Queue_Result result_try_dequeue = try_dequeue(tag, q, &data);
+
+        EXPECT(result_try_dequeue == Queue_Result_Empty);
+    }
+
+    {
+        Data data = {0};
+
+        Queue_Result result_dequeue = dequeue(tag, q, &data);
+
+        EXPECT(result_dequeue == Queue_Result_Empty);
+    }
+
+    free(q);
+
+    return NULL;
+}
+
+const char* full(Tag tag, unsigned count_in, unsigned count_out)
+{
+    (void) count_in;
+    (void) count_out;
+
+    size_t bytes = 0;
+    void* q = NULL;
+
+    make(tag, 1 << 8, NULL, &bytes);
+
+    EXPECT(bytes > 0);
+
+    q = malloc(bytes);
+
+    make(tag, 1 << 8, q, &bytes);
+
+    for (unsigned i = 0; i < (1 << 8); i++)
+    {
+        Data data = {0};
+
+        EXPECT(enqueue(tag, q, &data) == Queue_Result_Ok);
+    }
+
+    {
+        Data data = {0};
+
+        Queue_Result result_try_dequeue = try_enqueue(tag, q, &data);
+
+        EXPECT(result_try_dequeue == Queue_Result_Full);
+    }
+
+    {
+        Data data = {0};
+
+        Queue_Result result_dequeue = enqueue(tag, q, &data);
+
+        EXPECT(result_dequeue == Queue_Result_Full);
+    }
+
+    free(q);
+
+    return NULL;
+}
+
+const char* sums10000(Tag tag, unsigned count_in, unsigned count_out)
+{
+#if QUEUE_TEST_THREADS
+    // Stubbed for now!
+    (void) count_in;
+    (void) count_out;
+    (void) tag;
+    return "Stubbed out (TODO)";
+#else
+    (void) count_in;
+    (void) count_out;
+    (void) tag;
+#endif
+
+    return NULL;
+}
+
+typedef const char* (*Test)(Tag, unsigned, unsigned);
 #define TEST(x) { #x, x }
 
 struct
@@ -229,20 +343,45 @@ static tests[] =
 {
       TEST(null_pointers)
     , TEST(create)
+    , TEST(empty)
+    , TEST(full)
+    , TEST(sums10000)
 };
 
-#define TEST_COUNT 2
+#if QUEUE_TEST_THREADS
+    #define TEST_COUNT 5
+#else
+    #define TEST_COUNT 4
+#endif
 
 int main(int arg_count, char** args)
 {
     (void) arg_count;
     (void) args;
 
+    struct
+    {
+        unsigned count_in;
+        unsigned count_out;
+    }
+    thread_counts[(Max+1)] =
+    {
+          { 1,  1}
+        , {16,  1}
+        , { 1, 16}
+        , {16, 16}
+    };
+
     for (unsigned tag = 0; tag < (Max + 1); tag++)
     {
         for (unsigned j = 0; j < TEST_COUNT; j++)
         {
-            const char* error = tests[j].test(tag);
+            const char* error = tests[j].test
+            (
+                  tag
+                , thread_counts[tag].count_in
+                , thread_counts[tag].count_out
+            );
 
             printf
             (
