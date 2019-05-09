@@ -62,10 +62,10 @@ set_target_properties(
 # ------------------------------------------------------------------------------
 # Compiler flags
 # ------------------------------------------------------------------------------
-include(CheckCXXCompilerFlag)
+include(CheckCCompilerFlag)
 
-function(private_cxx_flags target flag)
-    check_cxx_compiler_flag(flag HAS_FLAG)
+function(private_c_flags target flag)
+    check_c_compiler_flag(flag HAS_FLAG)
     if(HAS_FLAG)
         target_compile_options(target PRIVATE flag)
     endif()
@@ -73,9 +73,9 @@ endfunction()
 
 # ------------------------------------------------------------------------------
 
-private_cxx_flags(${PROJECT_TEST} "-Wshadow")
-private_cxx_flags(${PROJECT_TEST} "-fno-exceptions")
-private_cxx_flags(${PROJECT_TEST} "-fno-rtti")
+private_c_flags(${PROJECT_TEST} "-Wall")
+private_c_flags(${PROJECT_TEST} "/W4")
+private_c_flags(${PROJECT_TEST} "-Wshadow")
 
 # ------------------------------------------------------------------------------
 # Dependencies
