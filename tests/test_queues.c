@@ -12,8 +12,7 @@
 
 // -----------------------------------------------------------------------------
 
-#define QUEUE_TEST_THREADS_MAX_IN  16
-#define QUEUE_TEST_THREADS_MAX_OUT 16
+#define QUEUE_TEST_THREADS_MAX 16
 
 typedef struct Data
 {
@@ -319,8 +318,9 @@ const char* full(Tag tag, unsigned count_in, unsigned count_out)
 
 typedef struct Thread_Data
 {
-    Tag            tag;
     void*          q;
+    int            multiplier;
+    Tag            tag;
     atomic_size_t* global_count;
     atomic_size_t* done;
 }
@@ -337,7 +337,9 @@ int thread_in(void* data)
 
     Thread_Data* info = CAST(Thread_Data*, data);
 
-    for (unsigned j = 0; j < 10000; j++)
+    unsigned max = 10000 * info->multiplier;
+
+    for (unsigned j = 0; j < max; j++)
     {
         while
         (
@@ -355,7 +357,9 @@ int thread_out(void* data)
 {
     Thread_Data* info = CAST(Thread_Data*, data);
 
-    for (unsigned j = 0; j < 10000; j++)
+    unsigned max = 10000 * info->multiplier;
+
+    for (unsigned j = 0; j < max; j++)
     {
         Data item = {0};
         while
@@ -396,15 +400,32 @@ const char* sums10000(Tag tag, unsigned count_in, unsigned count_out)
         EXPECT(create == Queue_Result_Ok);
     }
 
-    thrd_t in_threads [QUEUE_TEST_THREADS_MAX_IN];
-    thrd_t out_threads[QUEUE_TEST_THREADS_MAX_OUT];
+    thrd_t in_threads [QUEUE_TEST_THREADS_MAX];
+    thrd_t out_threads[QUEUE_TEST_THREADS_MAX];
 
     atomic_size_t  done_in_count  = ATOMIC_VAR_INIT(count_in);
     atomic_size_t  done_out_count = ATOMIC_VAR_INIT(count_out);
     atomic_size_t  global_count   = ATOMIC_VAR_INIT(0);
 
-    Thread_Data data_in  = {tag, q, &global_count, &done_in_count};
-    Thread_Data data_out = {tag, q, &global_count, &done_out_count};
+    int multiplier_in  = QUEUE_TEST_THREADS_MAX / count_in;
+    int multiplier_out = QUEUE_TEST_THREADS_MAX / count_out;
+
+    Thread_Data data_in =
+    {
+          q
+        , multiplier_in
+        , tag
+        , &global_count
+        , &done_in_count
+    };
+    Thread_Data data_out =
+    {
+          q
+        , multiplier_out
+        , tag
+        , &global_count
+        , &done_out_count
+    };
 
     for (unsigned i = 0; i < count_in; i++)
     {
@@ -436,7 +457,9 @@ const char* sums10000(Tag tag, unsigned count_in, unsigned count_out)
         EXPECT(result == thrd_success);
     }
 
-    EXPECT(atomic_load(&global_count) == (10000ULL*22*count_out));
+    size_t expected_count = 10000ULL * 22 * QUEUE_TEST_THREADS_MAX;
+
+    EXPECT(atomic_load(&global_count) == expected_count);
 #else
     (void) count_in;
     (void) count_out;
@@ -481,10 +504,10 @@ int main(int arg_count, char** args)
     }
     thread_counts[(Max+1)] =
     {
-          {                        1,                          1}
-        , {QUEUE_TEST_THREADS_MAX_IN,                          1}
-        , {                        1, QUEUE_TEST_THREADS_MAX_OUT}
-        , {QUEUE_TEST_THREADS_MAX_IN, QUEUE_TEST_THREADS_MAX_OUT}
+          {                     1,                      1}
+        , {QUEUE_TEST_THREADS_MAX,                      1}
+        , {                     1, QUEUE_TEST_THREADS_MAX}
+        , {QUEUE_TEST_THREADS_MAX, QUEUE_TEST_THREADS_MAX}
     };
 
     for (unsigned tag = 0; tag < (Max + 1); tag++)
