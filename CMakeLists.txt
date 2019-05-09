@@ -65,9 +65,16 @@ set_target_properties(
 include(CheckCCompilerFlag)
 
 function(private_c_flags target flag)
-    check_c_compiler_flag(flag HAS_FLAG)
-    if(HAS_FLAG)
-        target_compile_options(target PRIVATE flag)
+    string(REGEX REPLACE "^-Wno-" "-W" checked_flag ${flag})
+    set(flag_name ${checked_flag})
+
+    string(REPLACE       "+"     "X" flag_name ${flag_name})
+    string(REGEX REPLACE "[-=/]" "_" flag_name ${flag_name})
+
+    check_c_compiler_flag(${checked_flag} has${flag_name})
+
+    if(has${flag_name})
+        target_compile_options(${target} PRIVATE ${checked_flag})
     endif()
 endfunction()
 
