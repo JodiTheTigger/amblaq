@@ -27,7 +27,7 @@
         #include <stdatomic.h>
 
         #if defined(__STDC_NO_ATOMICS__)
-            #error Oh no, your C compiler doesn't support C11 atomics :-(
+            #error Oh no, your C compiler does not support C11 atomics :-(
         #endif
 
         #define QUEUE_ATOMIC_SIZE_T atomic_size_t
