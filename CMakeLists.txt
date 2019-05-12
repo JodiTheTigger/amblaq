@@ -22,6 +22,10 @@ set(SOURCE_TESTS
     ${DIR_TESTS}/test_queues.c
 )
 
+set(SOURCE_MISC
+    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+)
+
 # ------------------------------------------------------------------------------
 # Binaries
 # ------------------------------------------------------------------------------
@@ -41,6 +45,7 @@ target_include_directories(
 )
 
 target_sources(${PROJECT_NAME} INTERFACE ${SOURCE})
+target_sources(${PROJECT_NAME} INTERFACE ${SOURCE_MISC})
 
 # ------------------------------------------------------------------------------
 # Properties
