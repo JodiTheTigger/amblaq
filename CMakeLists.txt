@@ -24,6 +24,7 @@ set(SOURCE_TESTS
 
 set(SOURCE_MISC
     ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+    ${CMAKE_CURRENT_SOURCE_DIR}/README.md
 )
 
 # ------------------------------------------------------------------------------
