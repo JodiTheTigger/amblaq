@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)  # target_sources
-project(queues2)
+project(amblaq)
 
 set(DIR_SOURCE  ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(DIR_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -15,7 +15,7 @@ option(SANATIZE_THREAD "Use thread sanatizer" OFF)
 # Files
 # ------------------------------------------------------------------------------
 set(SOURCE
-    ${DIR_INCLUDE}/queues/queues.h
+    ${DIR_INCLUDE}/amblaq/queues.h
 )
 
 set(SOURCE_TESTS
