@@ -38,7 +38,7 @@
         #define QUEUE_ATOMIC_LOAD   atomic_load_explicit
 
     #else
-        #if (__cplusplus <= 199711L)
+        #if (__cplusplus < 201103L)
             #error C++11 is required for the C++ version of this file
         #endif
 

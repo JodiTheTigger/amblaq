@@ -2,7 +2,7 @@
 // Example code for readme.
 // -----------------------------------------------------------------------------
 #include <stdint.h>
-#include <malloc.h>
+#include <stdlib.h> // malloc
 
 #define MY_STRUCT_DATA_COUNT 8
 
@@ -85,13 +85,13 @@ int example()
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <threads.h>
 
 #if defined(__STDC_NO_THREADS__)
-#pramga message No C11 threading support, skipping threading tests (auto pass)
+#pragma message("No C11 threading support, skipping thread test (auto pass)")
 #define QUEUE_TEST_THREADS 0
 #else
 #define QUEUE_TEST_THREADS 1
+#include <threads.h>
 #endif
 
 // -----------------------------------------------------------------------------

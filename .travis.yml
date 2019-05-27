@@ -1,0 +1,29 @@
+language: c
+
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+      compiler: gcc
+      addons:
+        apt:
+          packages:
+            - ninja-build
+    - os: linux
+      dist: xenial
+      compiler: clang
+      addons:
+        apt:
+          packages:
+            - ninja-build
+    - os: osx
+      compiler: clang
+      before_install:
+      - brew install ninja
+
+script:
+  - mkdir build
+  - cd build
+  - cmake .. -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+  - cmake --build .
+  - ctest -V --timeout 60

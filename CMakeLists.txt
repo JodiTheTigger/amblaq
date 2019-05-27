@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.1)  # target_sources
 project(amblaq)
+enable_testing()
 
 set(DIR_SOURCE  ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(DIR_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -25,6 +26,7 @@ set(SOURCE_TESTS
 set(SOURCE_MISC
     ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
     ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+    ${CMAKE_CURRENT_SOURCE_DIR}/.travis.yml
 )
 
 # ------------------------------------------------------------------------------
@@ -47,6 +49,8 @@ target_include_directories(
 
 target_sources(${PROJECT_NAME} INTERFACE ${SOURCE})
 target_sources(${PROJECT_NAME} INTERFACE ${SOURCE_MISC})
+
+add_test(${PROJECT_TEST} ${PROJECT_TEST})
 
 # ------------------------------------------------------------------------------
 # Properties
@@ -87,6 +91,9 @@ endfunction()
 private_c_flags(${PROJECT_TEST} "-Wall")
 private_c_flags(${PROJECT_TEST} "/W4")
 private_c_flags(${PROJECT_TEST} "-Wshadow")
+
+private_c_flags(${PROJECT_TEST} "/TP")
+# Build c files as c++, otherwise they build as C90 :-(
 
 # ------------------------------------------------------------------------------
 # Dependencies
