@@ -18,8 +18,10 @@ matrix:
             - ninja-build
     - os: osx
       compiler: clang
-      before_install:
-      - brew install ninja
+      addons:
+        homebrew:
+          packages:
+            - ninja
 
 script:
   - mkdir build
