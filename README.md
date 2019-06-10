@@ -96,10 +96,10 @@ int example()
 
 ### Example as a header + c file
 
-my_queue.h:
+my_struct.h
 ```c
-#ifndef MY_QUEUE_H
-#define MY_QUEUE_H
+#ifndef MY_STRUCT_H
+#define MY_STRUCT_H
 
 #define MY_STRUCT_DATA_COUNT 8
 
@@ -109,6 +109,16 @@ typedef struct My_Struct
     uint8_t  data[MY_STRUCT_DATA_COUNT];
 }
 My_Struct;
+
+#endif // MY_STRUCT_H
+```
+
+my_queue.h:
+```c
+#ifndef MY_QUEUE_H
+#define MY_QUEUE_H
+
+#include "my_struct.h"
 
 #define QUEUE_MP   0
 #define QUEUE_MC   0
@@ -121,7 +131,16 @@ My_Struct;
 my_queue.c:
 ```c
 #define QUEUE_IMPLEMENTATION
-#include "my_queue.h"
+
+// NOTE: Cannot include my_queue.h as that could result in missing
+//       or duplicate symbols depending on header include order.
+
+#include "my_struct.h"
+
+#define QUEUE_MP   0
+#define QUEUE_MC   0
+#define QUEUE_TYPE My_Struct
+#include <amblaq/queues.h>
 ```
 
 Status
